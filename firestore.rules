@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // admins/{uid} が存在するユーザーだけが管理者
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function str(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function validCoin(d) {
+      return str(d.name, 1, 200)
+        && d.price is number && d.price > 0
+        && d.images is list && d.images.size() >= 1 && d.images.size() <= 4
+        && d.intro is map
+        && d.published is bool
+        && d.isSample is bool;
+    }
+
+    // 管理者リスト：本人が自分のドキュメントを読めるだけ。追加・削除は Firebase コンソールから
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // 商品：公開中のものだけ誰でも読める。編集は管理者のみ
+    match /coins/{coinId} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow create, update: if isAdmin() && validCoin(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // 管理者専用メモ（AI の「要確認」など）
+    match /coinPrivate/{coinId} {
+      allow read, write: if isAdmin();
+    }
+
+    // 問い合わせ：誰でも送信（作成）のみ可能。閲覧・更新は管理者のみ
+    match /inquiries/{id} {
+      allow create: if request.resource.data.keys().hasOnly(
+            ['coinId', 'coinName', 'coinPrice', 'name', 'email', 'message', 'status', 'createdAt'])
+        && str(request.resource.data.coinId, 1, 100)
+        && str(request.resource.data.coinName, 1, 200)
+        && request.resource.data.coinPrice is number
+        && str(request.resource.data.name, 1, 100)
+        && str(request.resource.data.email, 3, 200)
+        && request.resource.data.email.matches('^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$')
+        && str(request.resource.data.message, 1, 5000)
+        && request.resource.data.status == '未対応'
+        && request.resource.data.createdAt == request.time
+        && exists(/databases/$(database)/documents/coins/$(request.resource.data.coinId))
+        && get(/databases/$(database)/documents/coins/$(request.resource.data.coinId)).data.published == true;
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+    }
+  }
+}

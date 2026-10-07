@@ -1,0 +1,8 @@
+node_modules/
+.next/
+out/
+.env*.local
+.netlify/
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
