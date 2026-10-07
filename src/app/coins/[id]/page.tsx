@@ -12,6 +12,8 @@ import { INTRO_SECTIONS } from '@/lib/types';
 
 type Params = { params: { id: string } };
 
+const NUMERALS = ['I', 'II', 'III', 'IV'];
+
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const coin = await cachedPublishedCoin(params.id);
   if (!coin) return { title: 'コインが見つかりません' };
@@ -50,6 +52,7 @@ export default async function CoinDetailPage({ params }: Params) {
           <span>{coin.name}</span>
         </nav>
 
+        {/* 上段：画像と概要 */}
         <section className="container detail">
           <CoinGallery name={coin.name} images={coin.images} />
 
@@ -60,13 +63,19 @@ export default async function CoinDetailPage({ params }: Params) {
                 <span style={{ marginLeft: 8, fontSize: 13, color: 'var(--muted)' }}>この商品は表示例のための見本です。</span>
               </p>
             )}
-            <div className="detail-origin">{originLabel(coin.country, coin.year)}</div>
+            {originLabel(coin.country, coin.year) && <div className="detail-origin">{originLabel(coin.country, coin.year)}</div>}
             <h1 className="mincho">{coin.name}</h1>
-            <div className="detail-price">
-              <span>価格（税込）</span>
-              <span className="price">{formatYen(coin.price)}</span>
+
+            <div className="ornament" aria-hidden="true">
+              <span />
             </div>
-            <a href="#inquiry" className="btn btn-primary btn-lg" style={{ marginTop: 28 }}>
+
+            <div className="detail-price">
+              <span className="price">{formatYen(coin.price)}</span>
+              <span>（税込）</span>
+            </div>
+
+            <a href="#inquiry" className="btn btn-primary btn-lg">
               このコインについて問い合わせる
             </a>
             <p className="note">オンライン決済はございません。お問い合わせ後、担当者より個別にご案内いたします。</p>
@@ -84,15 +93,30 @@ export default async function CoinDetailPage({ params }: Params) {
                 </dl>
               </>
             )}
-
-            {sections.map(({ key, title }) => (
-              <section key={key} className="intro-section">
-                <h2 className="mincho">{title}</h2>
-                <p className="detail-desc">{coin.intro[key]}</p>
-              </section>
-            ))}
           </div>
         </section>
+
+        {/* 下段：紹介文（読み物） */}
+        {sections.length > 0 && (
+          <section className="reading" aria-label="コインの紹介">
+            <div className="reading-inner">
+              <div className="reading-head">
+                <div className="eyebrow">ABOUT THIS COIN</div>
+                <h2 className="mincho">このコインについて</h2>
+              </div>
+              {sections.map(({ key, title }, i) => (
+                <article key={key} className="reading-section">
+                  <h3>
+                    <span className="numeral">{NUMERALS[INTRO_SECTIONS.findIndex((s) => s.key === key)] ?? NUMERALS[i]}</span>
+                    {title}
+                  </h3>
+                  <div className="rule" aria-hidden="true" />
+                  <p>{coin.intro[key]}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <InquiryForm coinId={coin.id} coinName={coin.name} coinPrice={coin.price} coinImage={coverImage(coin)} />
       </main>
