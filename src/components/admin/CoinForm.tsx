@@ -426,7 +426,7 @@ export default function CoinForm({ coin, initialReviewNotes = '' }: Props) {
             <div className="ai-bar">
               <div>
                 <div style={{ fontWeight: 500 }}>AI で紹介文の下書きを作成</div>
-                <div className="cell-sub">登録した画像と補足情報をもとに、4つの項目を作成します。内容を確認・編集してから公開してください。</div>
+                <div className="cell-sub">登録した画像と補足情報をもとに、コインに関わる人物と時代の史実を中心に4つの項目を作成します。名称に発行者・肖像の人物名（例：フィリップ1世）を入れると精度が上がります。内容を確認・編集してから公開してください。</div>
               </div>
               <button type="button" className="btn btn-gold" onClick={runAi} disabled={aiBusy || uploading > 0}>
                 <SparkIcon />
@@ -452,7 +452,7 @@ export default function CoinForm({ coin, initialReviewNotes = '' }: Props) {
                 <textarea
                   id={`intro-${key}`}
                   className="input"
-                  rows={5}
+                  rows={key === 'history' ? 14 : 5}
                   maxLength={3000}
                   value={intro[key]}
                   onChange={(e) => {
