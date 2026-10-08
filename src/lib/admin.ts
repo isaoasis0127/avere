@@ -182,6 +182,8 @@ export async function generateIntro(input: AiInput): Promise<AiDraft> {
     // 下でエラー扱い
   }
   if (last.type === 'result' && last.data) return last.data;
+  if (last.type === 'progress')
+    throw new Error('AI の応答が途中で途切れました（処理時間の上限）。もう一度お試しください。');
   throw new Error(last.message || `AI 生成に失敗しました（${res.status}）。`);
 }
 

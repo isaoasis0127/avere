@@ -9,6 +9,9 @@ export const maxDuration = 60;
 
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5-5';
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const EFFORT = (process.env.ANTHROPIC_EFFORT || 'medium') as 'low' | 'medium' | 'high';
+/** Netlify のストリーミング応答の上限 60 秒より少し短く */
+const TIME_LIMIT_MS = 54_000;
 
 const SYSTEM = `あなたはアンティークコイン販売店「Avere」の商品紹介文を書く、歴史に詳しいライターです。
 管理者が入力した補足情報と商品画像をもとに、公開ページに載せる紹介文の「下書き」を日本語で作成します。下書きは管理者が確認・編集してから公開されます。
@@ -40,8 +43,9 @@ const SYSTEM = `あなたはアンティークコイン販売店「Avere」の�
 # 史実の扱い（最重要）
 - 人物の特定は、まず管理者が入力した名称・補足情報に従う。入力がなく画像からも確実に特定できない場合は、人物を断定せず、時代・地域の歴史を中心に書き、needs_review に「人物（発行者・肖像）の確認」を挙げる。
 - 本文に書くのは、歴史学で広く認められている史実に限る。
-- 古代の史料に基づく伝承や、研究者の間で見解が分かれる内容は「〜と伝えられています」「〜とされています」と書き分け、事実と断定しない。
-- 架空の会話・心情描写・創作した逸話は書かない。
+- 人物にまつわる有名な伝承・逸話（古代の歴史家が記した話、後世に語り継がれた話など）は、物語の魅力を高めるので積極的に取り入れてよい。ただし必ず「伝承によれば」「〜と伝えられています」「史家◯◯によれば」のように前置きし、史実と区別して書く。
+- 研究者の間で見解が分かれる内容は「〜とする説があります」「〜とされています」と書き、事実と断定しない。
+- 伝承として実際に伝わっていない会話・心情描写・逸話を創作しない。
 - 自信のない固有名詞、年号、数字、出来事は本文に書かず、needs_review に「確認してほしい点」として具体的に書く。
 - 画像だけでは確定できないこと（発行年、ミントマーク、額面、素材、銘文の読み、図柄の特定など）は本文で断定せず、needs_review に書く。
 - 真贋、希少性（「希少」「現存◯枚」など）、保存状態や鑑定グレードを推測で断定しない。グレードは入力された値をそのまま紹介する場合のみ言及してよい。
@@ -141,9 +145,15 @@ export async function POST(req: Request) {
         );
 
         const client = new Anthropic();
-        const msg = await client.messages.create({
+        // Netlify の上限（60秒）より前に打ち切り、理由を画面に返す
+        const abort = new AbortController();
+        const timer = setTimeout(() => abort.abort(), TIME_LIMIT_MS);
+        const msg = await client.messages.create(
+          {
           model: MODEL,
-          max_tokens: 16000,
+          max_tokens: 12000,
+          // 文章生成なので思考量は中程度にして応答時間を短くする（既定は high）
+          output_config: { effort: EFFORT },
           system: SYSTEM,
           messages: [
             {
@@ -157,7 +167,9 @@ export async function POST(req: Request) {
               ],
             },
           ],
-        });
+          },
+          { signal: abort.signal },
+        ).finally(() => clearTimeout(timer));
 
         // 最新モデルはツールの強制指定に非対応のため、本文の JSON を読み取る
         const text = msg.content
@@ -179,7 +191,9 @@ export async function POST(req: Request) {
         const status = e instanceof Anthropic.APIError ? e.status : undefined;
         const detail = e instanceof Error ? e.message : String(e);
         let message: string;
-        if (status === 401) message = 'AI サービスの API キーが無効です。';
+        if (e instanceof Anthropic.APIUserAbortError || /abort/i.test(detail))
+          message = '生成に時間がかかりすぎたため中断しました。もう一度お試しください（画像の枚数を減らすと速くなります）。';
+        else if (status === 401) message = 'AI サービスの API キーが無効です。';
         else if (/credit balance/i.test(detail)) message = 'AI サービスの残高が不足しています。Claude Console でクレジットを追加してください。';
         else if (status === 404 || /model/i.test(detail)) message = `指定のモデル（${MODEL}）が使えません。ANTHROPIC_MODEL を確認してください。`;
         else if (status === 429 || status === 529) message = 'AI サービスが混み合っています。少し時間をおいて再度お試しください。';
