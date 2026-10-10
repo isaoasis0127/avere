@@ -67,7 +67,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: 16px; padding-top: 20px; padding-bottom: 20px;
 }
-.logo { text-decoration: none; display: flex; flex-direction: column; line-height: 1; }
+.logo { text-decoration: none; display: flex; align-items: center; line-height: 1; }
+.logo-img { display: block; height: 48px; width: auto; max-width: 100%; }
+.logo-img-footer { height: 36px; }
+.logo-img-admin { height: 30px; }
 .logo-name {
   font-family: var(--font-latin); font-style: italic; font-weight: 600;
   font-size: 40px; color: var(--ink);
@@ -81,6 +84,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .site-nav a[aria-current='page'] { color: var(--ink); border-bottom: 1px solid var(--gold); }
 @media (max-width: 640px) {
   .logo-name { font-size: 30px; }
+  .logo-img { height: 34px; }
+  .logo-img-footer { height: 30px; }
   .site-nav { gap: 18px; font-size: 13px; }
 }
 

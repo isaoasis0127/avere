@@ -48,7 +48,8 @@ export default function AdminLoginPage() {
     <main className="login-wrap">
       <div className="login-card">
         <div style={{ textAlign: 'center', lineHeight: 1 }}>
-          <div className="logo-name">Avere</div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-mark.png" alt="Avere Numismatics" width={96} height={96} style={{ margin: '0 auto' }} />
           <div style={{ marginTop: 10, fontSize: 13, letterSpacing: '0.2em', color: 'var(--gold-text)' }}>管理画面</div>
         </div>
         <form onSubmit={onSubmit} style={{ marginTop: 36, display: 'flex', flexDirection: 'column', gap: 20 }}>

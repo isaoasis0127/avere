@@ -68,7 +68,8 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
       <div className="admin-shell">
         <aside className="admin-side">
           <div className="admin-logo">
-            <span className="logo-name">Avere</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo.png" alt="Avere Numismatics" className="logo-img logo-img-admin" width={774} height={120} />
             <small>管理画面</small>
           </div>
           <nav className="admin-nav" aria-label="管理メニュー">

@@ -5,9 +5,8 @@ export default function SiteFooter() {
     <footer className="site-footer">
       <div className="container">
         <div>
-          <div className="logo-name" style={{ fontSize: 28 }}>
-            Avere
-          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo.png" alt="Avere Numismatics" className="logo-img logo-img-footer" width={774} height={120} />
         </div>
         <div className="footer-links">
           <Link href="/legal">特定商取引法に基づく表記</Link>
